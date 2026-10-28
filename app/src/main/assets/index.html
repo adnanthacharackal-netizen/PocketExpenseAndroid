@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#084b43"><title>Pocket Expense</title>
+<style>
+:root{--deep:#084b43;--green:#0b8b69;--mint:#e5f7f0;--ink:#183746;--muted:#70838d;--line:#e0e9ed;--bg:#f4f8f8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);padding-bottom:28px}
+header{background:var(--deep);color:white;padding:22px 18px 26px;border-radius:0 0 24px 24px}
+.brand{font-weight:850;font-size:23px;letter-spacing:-.5px}.brand span{color:#7ce1bd}.subtitle{font-size:12px;color:#d6eee7;margin-top:3px}
+.greet{margin-top:24px;font-size:19px;font-weight:750}.hint{font-size:12px;color:#d6eee7;margin-top:5px}
+main{padding:0 14px;max-width:700px;margin:-12px auto 0}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card,.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 4px 14px #153b4710}
+.card small{display:block;color:var(--muted);font-size:11px;min-height:28px}.num{font-size:22px;font-weight:800;margin-top:4px;overflow-wrap:anywhere}.remaining{color:var(--green)}
+.panel{margin-top:13px}.panel h2{font-size:16px;margin:0 0 14px}.section-head{display:flex;align-items:center;justify-content:space-between}
+label{display:block;font-size:12px;color:#526a76;margin:11px 0 5px}
+input,select{width:100%;padding:12px;border:1px solid #d8e3e8;border-radius:10px;background:#fff;font:inherit;font-size:14px;color:var(--ink);outline-color:var(--green)}
+button{font:inherit;font-size:14px;font-weight:700;border:0;border-radius:10px;padding:12px;background:var(--deep);color:white;width:100%;margin-top:12px}
+button.secondary{background:var(--mint);color:var(--deep);width:auto;padding:8px 11px;margin:0;font-size:12px}
+.progress{height:8px;background:#eaf0f1;border-radius:20px;margin-top:10px;overflow:hidden}.progress div{height:100%;background:var(--green);width:0}
+.rowitem{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #edf1f3}.rowitem:last-child{border-bottom:0}.itemname{font-size:14px;font-weight:700}.meta{font-size:11px;color:var(--muted);margin-top:4px}.price{font-size:14px;font-weight:800;white-space:nowrap}.del{background:#fff0ef;color:#b83232;padding:7px 9px;width:auto;margin:0 0 0 6px}
+.pill{display:inline-block;background:var(--mint);color:#087456;padding:4px 7px;border-radius:20px;font-size:10px;margin-top:4px}
+.empty{font-size:13px;color:var(--muted);padding:10px 0}.categoryline{display:flex;justify-content:space-between;font-size:13px;padding:7px 0}.budget-click{cursor:pointer;border-bottom:1px dashed #9ebdb3}
+footer{text-align:center;font-size:11px;color:var(--muted);padding:22px}
+</style></head>
+<body>
+<header><div class="brand">▣ Pocket <span>Expense</span></div><div class="subtitle">Micro Budget & Subscription Manager</div><div class="greet">Your money, made simpler ✨</div><div class="hint">Track spending. Stay on budget. Plan ahead.</div></header>
+<main>
+<section class="stats" style="margin-top:20px">
+<div class="card"><small>Total expenses</small><div class="num" id="total">₹0</div></div>
+<div class="card"><small>Monthly budget · tap amount to edit</small><div class="num budget-click" id="budget">₹25,000</div></div>
+<div class="card"><small>Budget remaining</small><div class="num remaining" id="remaining">₹25,000</div><div class="progress"><div id="bar"></div></div></div>
+<div class="card"><small>Subscriptions</small><div class="num" id="subcount">0</div></div>
+</section>
+<section class="panel"><h2>Add an expense</h2><form id="expenseForm">
+<label for="ename">Expense name</label><input id="ename" placeholder="e.g. Lunch, bus fare" required maxlength="80">
+<label for="eamount">Amount (₹)</label><input id="eamount" type="number" min="0.01" step="0.01" placeholder="250" required>
+<label for="ecategory">Category</label><select id="ecategory"><option>Food</option><option>Travel</option><option>Education</option><option>Shopping</option><option>Bills</option><option>Other</option></select>
+<label for="edate">Date</label><input id="edate" type="date" required><button type="submit">+ Add expense</button></form></section>
+<section class="panel"><div class="section-head"><h2 style="margin-bottom:0">Recent expenses</h2><span class="pill" id="expensecount">0 items</span></div><div id="expenses" class="empty">No expenses yet. Add your first one above.</div></section>
+<section class="panel"><h2>Spending by category</h2><div id="categories" class="empty">Your category summary will appear here.</div></section>
+<section class="panel"><h2>Subscriptions</h2><form id="subForm">
+<label for="sname">Service name</label><input id="sname" placeholder="e.g. Music or video service" maxlength="80" required>
+<label for="samount">Amount (₹)</label><input id="samount" type="number" min="0.01" step="0.01" placeholder="199" required>
+<label for="sdate">Next renewal date</label><input id="sdate" type="date" required><button type="submit">+ Add subscription</button></form><div id="subs" class="empty">No subscriptions added yet.</div></section>
+</main><footer>Made for simpler everyday money management · Data stays on this device</footer>
+<script>
+const $=id=>document.getElementById(id), money=n=>'₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+let budget=Number(localStorage.peBudget||25000), expenses=JSON.parse(localStorage.peExpenses||'[]'), subs=JSON.parse(localStorage.peSubs||'[]');
+$('edate').valueAsDate=new Date();
+$('budget').onclick=()=>{let v=prompt('Set monthly budget in ₹',budget);if(v!==null&&v.trim()&&Number(v)>0){budget=Number(v);localStorage.peBudget=budget;render()}};
+$('expenseForm').onsubmit=e=>{e.preventDefault();expenses.unshift({id:Date.now(),name:$('ename').value.trim(),amount:Number($('eamount').value),category:$('ecategory').value,date:$('edate').value});save();e.target.reset();$('edate').valueAsDate=new Date();render()};
+$('subForm').onsubmit=e=>{e.preventDefault();subs.push({id:Date.now(),name:$('sname').value.trim(),amount:Number($('samount').value),date:$('sdate').value});save();e.target.reset();render()};
+function save(){localStorage.peExpenses=JSON.stringify(expenses);localStorage.peSubs=JSON.stringify(subs)}
+function safe(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function removeExpense(id){expenses=expenses.filter(x=>x.id!==id);save();render()}
+function removeSub(id){subs=subs.filter(x=>x.id!==id);save();render()}
+function render(){
+ let total=expenses.reduce((s,x)=>s+x.amount,0),left=budget-total;
+ $('total').textContent=money(total);$('budget').textContent=money(budget);$('remaining').textContent=money(left);$('remaining').style.color=left<0?'#b83232':'#0b8b69';$('bar').style.width=Math.min(100,total/budget*100)+'%';$('subcount').textContent=subs.length;$('expensecount').textContent=expenses.length+' items';
+ $('expenses').innerHTML=expenses.length?expenses.map(x=>`<div class="rowitem"><div><div class="itemname">${safe(x.name)}</div><div class="meta">${safe(x.date)} · ${safe(x.category)}</div></div><div style="display:flex;align-items:center"><span class="price">${money(x.amount)}</span><button class="del" onclick="removeExpense(${x.id})">×</button></div></div>`).join(''):'<div class="empty">No expenses yet. Add your first one above.</div>';
+ let cats={};expenses.forEach(x=>cats[x.category]=(cats[x.category]||0)+x.amount);
+ $('categories').innerHTML=Object.keys(cats).length?Object.entries(cats).map(([k,v])=>`<div class="categoryline"><span>${safe(k)}</span><strong>${money(v)}</strong></div>`).join(''):'<div class="empty">Your category summary will appear here.</div>';
+ $('subs').innerHTML=subs.length?subs.map(x=>`<div class="rowitem"><div><div class="itemname">${safe(x.name)}</div><div class="meta">Renewal: ${safe(x.date)}</div></div><div style="display:flex;align-items:center"><span class="price">${money(x.amount)}</span><button class="del" onclick="removeSub(${x.id})">×</button></div></div>`).join(''):'<div class="empty">No subscriptions added yet.</div>';
+}
+render();
+</script></body></html>
